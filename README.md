@@ -171,3 +171,14 @@ aws ssm start-session --target $HOST \
 ```
 
 vscode will create a ssh connection to the EC2 via the **ProxyCommand** script which creates a SSM session under the hood. This is the way [vscode ssh remote with cloud9 works](https://aws.amazon.com/blogs/architecture/field-notes-use-aws-cloud9-to-power-your-visual-studio-code-ide/)
+
+
+### Configure vscode ssh 
+- keep alive settings.json
+```
+{
+  "remote.SSH.connectTimeout": 60
+}
+
+```
+- [further customiation](https://code.visualstudio.com/blogs/2019/10/03/remote-ssh-tips-and-tricks)
