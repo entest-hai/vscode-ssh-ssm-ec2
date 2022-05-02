@@ -1,23 +1,43 @@
-import { aws_ec2, aws_iam, Stack, StackProps } from "aws-cdk-lib";
-import { Construct } from "constructs";
+import { aws_ec2, aws_s3, Stack, StackProps, aws_iam, aws_cloudwatch, aws_cloudwatch_actions, Duration } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
-export class CdkVpcEndpointStack extends Stack {
+const keyPairName = "keyPairName";
+
+export class GettingStartedCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // create a new vpc with s3 endpoint
-    const vpc = new aws_ec2.Vpc(this, "VpcWithS3Endpoint", {
-      gatewayEndpoints: {
-        S3: {
-          service: aws_ec2.GatewayVpcEndpointAwsService.S3,
-        },
-      },
-    });
+    // create a s3 bucket
+    new aws_s3.Bucket(
+      this,
+      'haimtran-workspace',
+      {
+        bucketName: 'haimtran-workspace',
+        blockPublicAccess: aws_s3.BlockPublicAccess.BLOCK_ALL
 
-    // add vpc endpoint ssm
-    vpc.addInterfaceEndpoint("VpcIterfaceEndpointSSM", {
-      service: aws_ec2.InterfaceVpcEndpointAwsService.SSM,
-    });
+      }
+    )
+
+    // create a new vpc with s3 endpoint 
+    const vpc = new aws_ec2.Vpc(
+      this,
+      'VpcWithS3Endpoint',
+      {
+        gatewayEndpoints: {
+          S3: {
+            service: aws_ec2.GatewayVpcEndpointAwsService.S3
+          }
+        }
+      }
+    )
+
+    // add vpc endpoint ssm 
+    vpc.addInterfaceEndpoint(
+      "VpcInterfaceEndpointSSM", {
+      service: aws_ec2.InterfaceVpcEndpointAwsService.SSM
+    }
+    )
 
     // role for ec2 to access s3
     const role = new aws_iam.Role(this, "RoleForEc2ToAccessS3", {
@@ -45,12 +65,16 @@ export class CdkVpcEndpointStack extends Stack {
       )
     );
 
-    // security group open port 22
-    const sg = new aws_ec2.SecurityGroup(this, "SecurityGroupOpenPort22", {
-      vpc,
-      description: "allow port 22",
-      allowAllOutbound: true,
-    });
+    // creat a securigy group
+    const sg = new aws_ec2.SecurityGroup(
+      this,
+      'SecurityGroupOpenPort22',
+      {
+        vpc,
+        description: 'allow port 22',
+        allowAllOutbound: true
+      }
+    )
 
     // open port 22
     sg.addIngressRule(
@@ -69,9 +93,9 @@ export class CdkVpcEndpointStack extends Stack {
     // ec2 instance in private subnet
     const ec2 = new aws_ec2.Instance(this, "Ec2ConnectVpcEndpointS3", {
       role: role,
-      keyName: "hai_ec2_t4g_large",
+      keyName: keyPairName,
       vpc: vpc,
-      instanceName: "Ec2ConnectVpcEndpointS3",
+      instanceName: "Ec2PrivateVsCode",
       instanceType: aws_ec2.InstanceType.of(
         aws_ec2.InstanceClass.T2,
         aws_ec2.InstanceSize.SMALL
@@ -86,12 +110,12 @@ export class CdkVpcEndpointStack extends Stack {
     // ec2 in public subnet
     const ec2pub = new aws_ec2.Instance(this, "Ec2PublicSubnet", {
       role: role,
-      keyName: "hai_ec2_t4g_large",
+      keyName: keyPairName,
       vpc: vpc,
-      instanceName: "Ec2PublicSubnet",
+      instanceName: "Ec2PubVscode",
       instanceType: aws_ec2.InstanceType.of(
         aws_ec2.InstanceClass.T2,
-        aws_ec2.InstanceSize.SMALL
+        aws_ec2.InstanceSize.LARGE
       ),
       machineImage: aws_ec2.MachineImage.latestAmazonLinux(),
       securityGroup: sg,
@@ -99,5 +123,41 @@ export class CdkVpcEndpointStack extends Stack {
         subnetType: aws_ec2.SubnetType.PUBLIC,
       },
     });
+
+    // assign an elastic ip to the pub instance 
+    const eip = new aws_ec2.CfnEIP(
+      this,
+      'ElasticIPForEc2Pub',
+      {
+        domain: 'standard',
+        instanceId: ec2pub.instanceId,
+      }
+    )
+    // add cloudwatch alarm to turn off after 30 minute idle
+    const alarm = new aws_cloudwatch.Alarm(
+      this,
+      'StopIdleEc2Pub',
+      {
+        alarmName: 'StopIdleEc2Instance',
+        comparisonOperator: aws_cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        threshold: 0.99,
+        evaluationPeriods: 6,
+        datapointsToAlarm: 5,
+        metric: new aws_cloudwatch.Metric({
+          namespace: 'AWS/EC2',
+          metricName: 'CPUUtilization',
+          statistic: 'Average',
+          period: Duration.minutes(5),
+          dimensionsMap: {
+            'InstanceId': ec2pub.instanceId
+          }
+        })
+      }
+    )
+
+    alarm.addAlarmAction(
+      new aws_cloudwatch_actions.Ec2Action(aws_cloudwatch_actions.Ec2InstanceAction.STOP)
+    );
+
   }
 }
