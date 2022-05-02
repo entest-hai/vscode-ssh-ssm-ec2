@@ -15,8 +15,7 @@ With AWS system manager (SSM), it is possible to setup vscode ssh remote to a EC
 - [aws ssm start-session](https://docs.aws.amazon.com/cli/latest/reference/ssm/start-session.html)
 
 ### Architecture
-
-![aws_devops-Expriment](https://user-images.githubusercontent.com/20411077/165264406-14a840a7-af5b-47e1-a5fe-7b32018ae996.jpg)
+![aws_devops-Expriment drawio](https://user-images.githubusercontent.com/20411077/166241577-87e23a4b-5e98-443d-b115-ff9c271fa603.png)
 
 ### CDK Stack
 
