@@ -5,7 +5,7 @@
 With AWS system manager (SSM), it is possible to setup vscode ssh remote to a EC2 in a private subnet, and without open 22 port. In this note,
 
 - Setup a connection to a private EC2 via SSM
-- Setup vscode ssh remote to the EC2 by proxyCommand
+- Setup vscode ssh remote to the EC2 by [**proxyCommand**](https://github.com/aws-samples/cloud9-to-power-vscode-blog/blob/main/scripts/ssm-proxy.sh)
 - Create the infrastructure by a CDK stack
 
 **Reference**
@@ -109,7 +109,7 @@ aws ssm start-session --target "EC2-INSTANCE-ID"
 
 ### Setup vscode ssh remote to the EC2
 
-[follow this to ](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)nstall ssh remote extension for vscode
+[follow this to ](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) install ssh remote extension for vscode
 
 generate SSH key pair from the local machine
 
