@@ -119,7 +119,7 @@ ssh-keygen -b 4096 -C 'VS Code Remote SSH user' -t rsa
 
 configure the ~/.ssh/config file
 
-```tsx
+```bash
 Host ssm-private-ec2
   IdentityFile ~/.ssh/id_rsa
   HostName i-026bb5f5caaf16aa1
@@ -129,7 +129,7 @@ Host ssm-private-ec2
 
 create a ssm-private-ec2-proxy.sh file
 
-```shell
+```bash
 #!/bin/bash
 
 AWS_PROFILE=''
