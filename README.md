@@ -96,6 +96,45 @@ const ec2 = new aws_ec2.Instance(this, "Ec2ConnectVpcEndpointS3", {
 });
 ```
 
+cloudwatch 
+```tsx
+// add cloudwatch alarm to turn off after 30 minute idle
+    const alarm = new aws_cloudwatch.Alarm(
+      this,
+      'StopIdleEc2Pub',
+      {
+        alarmName: 'StopIdleEc2Instance',
+        comparisonOperator: aws_cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        threshold: 0.99,
+        evaluationPeriods: 6,
+        datapointsToAlarm: 5,
+        metric: new aws_cloudwatch.Metric({
+          namespace: 'AWS/EC2',
+          metricName: 'CPUUtilization',
+          statistic: 'Average',
+          period: Duration.minutes(5),
+          dimensionsMap: {
+            'InstanceId': ec2pub.instanceId
+          }
+        })
+      }
+    )
+
+    // cloudwatch stop ec2
+    alarm.addAlarmAction(
+      new aws_cloudwatch_actions.Ec2Action(aws_cloudwatch_actions.Ec2InstanceAction.STOP)
+    );
+
+    // cloudwatch send sns 
+    alarm.addAlarmAction(
+      new aws_cloudwatch_actions.SnsAction(
+        aws_sns.Topic.fromTopicArn(this,
+                                   'MonitorEc2Topic',
+                                   'arn:aws:sns:ap-southeast-1:392194582387:MonitorEc2')
+      )
+    )
+```
+
 ### Setup a connection to private EC2 via SSM
 
 [follow this to](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) install ssm plugin for the local machine
