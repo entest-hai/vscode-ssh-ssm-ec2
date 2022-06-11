@@ -202,3 +202,10 @@ keep alive settings.json
 ```
 
 - [further customiation](https://code.visualstudio.com/blogs/2019/10/03/remote-ssh-tips-and-tricks)
+
+### Add ssh pub-key to ec2 
+generate ssh-pub key in local machine 
+```bash 
+ssh-keygen -t ed25519 -C "your_email@example.com"
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
